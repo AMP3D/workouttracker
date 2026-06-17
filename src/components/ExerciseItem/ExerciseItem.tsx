@@ -26,6 +26,7 @@ export const ExerciseItem = ({
   editing,
   exercise,
   expanded,
+  flash,
   isFirst,
   isLast,
   onCheckChange,
@@ -81,6 +82,7 @@ export const ExerciseItem = ({
         'exercise-item',
         allComplete ? 'exercise-item--completed' : '',
         expanded ? 'exercise-item--expanded' : '',
+        flash ? 'exercise-item--flash' : '',
       ]
         .filter(Boolean)
         .join(' ')}

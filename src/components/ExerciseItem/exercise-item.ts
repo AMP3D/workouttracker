@@ -6,6 +6,7 @@ export interface ExerciseItemProps {
   editing: boolean;
   exercise: Exercise;
   expanded: boolean;
+  flash: boolean;
   isFirst: boolean;
   isLast: boolean;
   onCheckChange: (checked: boolean) => void;

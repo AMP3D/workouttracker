@@ -41,6 +41,7 @@ export const DayDetail = () => {
   const [editingExerciseId, setEditingExerciseId] = useState<string | null>(null);
   const [elapsedDisplay, setElapsedDisplay] = useState<string | null>(null);
   const [expandedExerciseIds, setExpandedExerciseIds] = useState<Set<string>>(new Set());
+  const [flashExerciseId, setFlashExerciseId] = useState<string | null>(null);
   const [newExerciseMuscles, setNewExerciseMuscles] = useState('');
   const [newExerciseName, setNewExerciseName] = useState('');
   const [pendingDeleteWorkoutId, setPendingDeleteWorkoutId] = useState<string | null>(null);
@@ -175,6 +176,11 @@ export const DayDetail = () => {
     if (!updated) {
       return;
     }
+
+    const movedId = workout.exercises[exerciseIndex].id;
+
+    setFlashExerciseId(movedId);
+    setTimeout(() => setFlashExerciseId(null), 1500);
 
     await persistWorkout(updated);
   };
@@ -335,6 +341,7 @@ export const DayDetail = () => {
                       editing={editingExerciseId === exercise.id}
                       exercise={exercise}
                       expanded={expandedExerciseIds.has(exercise.id)}
+                      flash={flashExerciseId === exercise.id}
                       isFirst={index === 0}
                       isLast={index === workout.exercises.length - 1}
                       key={exercise.id}
