@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "format": "prettier --write \"src/**/*.{ts,tsx,scss}\"",
-    "deploy": "gh-pages -d dist -m \"$(git log -1 --format=%s)\""
+    "deploy": "tsc -b && vite build && gh-pages -d dist -m \"$(git log -1 --format=%s)\""
   },
   "dependencies": {
     "@preact/signals-react": "^3.10.2",
