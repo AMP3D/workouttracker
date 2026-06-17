@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeftIcon, ChevronDownIcon, ChevronUpIcon } from '../../assets/icons';
 import { Header } from '../../components/Header/Header';
 import type { DayWorkout } from '../../models';
+import { getAllWorkouts } from '../../storage/workout-storage';
 import { formatDateId, formatDateLabel, getMonthName, parseDateId } from '../../utils/date-utils';
 import { formatWeight } from '../../utils/weight-utils';
-import { getAllWorkouts } from '../../storage/workout-storage';
+import { formatDuration, getFirstSetCompletion, getLastSetCompletion } from '../../utils/workout-utils';
+import { buildCalendarDays, getNextMonth, getPrevMonth, WEEKDAY_LABELS } from './logs-utils';
 import './logs.scss';
-
-const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export const Logs = () => {
   const navigate = useNavigate();
@@ -27,39 +27,21 @@ export const Logs = () => {
 
   const calendarDays = buildCalendarDays(currentYear, currentMonth);
 
-  const formatDuration = (startedAt: number | null, completedAt: number | null): string => {
-    if (!startedAt || !completedAt) {
-      return '';
-    }
-
-    const diffMin = Math.round((completedAt - startedAt) / 60000);
-
-    if (diffMin < 60) {
-      return `${diffMin}m`;
-    }
-
-    const hours = Math.floor(diffMin / 60);
-    const mins = diffMin % 60;
-
-    return `${hours}h ${mins}m`;
-  };
+  const workoutStart = selectedWorkout ? getFirstSetCompletion(selectedWorkout) : null;
+  const workoutEnd = selectedWorkout ? getLastSetCompletion(selectedWorkout) : null;
+  const workoutDuration =
+    workoutStart && workoutEnd ? formatDuration(workoutEnd - workoutStart) : '';
 
   const handleNextMonth = () => {
-    if (currentMonth === 11) {
-      setCurrentMonth(0);
-      setCurrentYear(currentYear + 1);
-    } else {
-      setCurrentMonth(currentMonth + 1);
-    }
+    const next = getNextMonth(currentMonth, currentYear);
+    setCurrentMonth(next.month);
+    setCurrentYear(next.year);
   };
 
   const handlePrevMonth = () => {
-    if (currentMonth === 0) {
-      setCurrentMonth(11);
-      setCurrentYear(currentYear - 1);
-    } else {
-      setCurrentMonth(currentMonth - 1);
-    }
+    const prev = getPrevMonth(currentMonth, currentYear);
+    setCurrentMonth(prev.month);
+    setCurrentYear(prev.year);
   };
 
   const loadAllWorkouts = async () => {
@@ -149,9 +131,7 @@ export const Logs = () => {
                 <div className="logs__workout-header">
                   <span className="logs__workout-name">{selectedWorkout.workoutName}</span>
 
-                  <span className="logs__workout-duration">
-                    {formatDuration(selectedWorkout.startedAt, selectedWorkout.completedAt)}
-                  </span>
+                  <span className="logs__workout-duration">{workoutDuration}</span>
                 </div>
 
                 {selectedWorkout.exercises.map((exercise) => (
@@ -165,7 +145,9 @@ export const Logs = () => {
                       <div className="logs__set-log" key={set.id}>
                         <span className={set.completedAt ? 'logs__set-completed' : ''}>
                           Set {set.setNumber}: {set.reps} reps × {formatWeight(set.totalWeight)}
-                          {set.notes ? ` — ${set.notes}` : ''}
+                          {set.completedAt && workoutStart
+                            ? ` · ${formatDuration(set.completedAt - workoutStart)}`
+                            : ''}
                           {set.completedAt ? ' ✓' : ''}
                         </span>
                       </div>
@@ -179,37 +161,4 @@ export const Logs = () => {
       </div>
     </>
   );
-};
-
-interface CalendarDay {
-  date: Date;
-}
-
-const buildCalendarDays = (year: number, month: number): CalendarDay[] => {
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-
-  // Monday = 0, Sunday = 6
-  const startDayOfWeek = (firstDay.getDay() + 6) % 7;
-  const days: CalendarDay[] = [];
-
-  for (let i = startDayOfWeek - 1; i >= 0; i--) {
-    const date = new Date(year, month, -i);
-    days.push({ date });
-  }
-
-  for (let d = 1; d <= lastDay.getDate(); d++) {
-    days.push({ date: new Date(year, month, d) });
-  }
-
-  while (days.length % 7 !== 0) {
-    const nextDate = new Date(
-      year,
-      month + 1,
-      days.length - startDayOfWeek - lastDay.getDate() + 1,
-    );
-    days.push({ date: nextDate });
-  }
-
-  return days;
 };

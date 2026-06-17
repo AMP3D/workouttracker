@@ -6,20 +6,29 @@ import { ConfirmDialog } from '../../components/ConfirmDialog/ConfirmDialog';
 import { ExerciseItem } from '../../components/ExerciseItem/ExerciseItem';
 import { Header } from '../../components/Header/Header';
 import { Toast } from '../../components/Toast/Toast';
-import type { DayWorkout, Exercise, ExerciseSet, WorkoutTemplate } from '../../models';
+import type { DayWorkout, Exercise, WorkoutTemplate } from '../../models';
 import { showToast } from '../../state/app-state';
 import { templates } from '../../state/workout-state';
-import {
-  deleteWorkout,
-  getAllTemplates,
-  getAllWorkouts,
-  getWorkoutsByDate,
-  saveWorkout,
-  syncWorkoutToTemplate,
-} from '../../storage/workout-storage';
+import { deleteWorkout } from '../../storage/workout-storage';
 import { formatDateId, formatDateLabel, parseDateId } from '../../utils/date-utils';
-import { makeExerciseId, makeSetId, makeWorkoutId } from '../../utils/id-utils';
-import { calculateTotalWeight, formatVolume } from '../../utils/weight-utils';
+import { formatVolume } from '../../utils/weight-utils';
+import {
+  appendExerciseToWorkout,
+  applyExerciseUpdate,
+  cloneExerciseInWorkout,
+  computeElapsedDisplay,
+  fetchDayData,
+  filterUncheckedExercises,
+  findNextIncompleteIndex,
+  getCheckedForWorkout,
+  moveExerciseInWorkout,
+  persistAndSync,
+  removeExerciseFromWorkout,
+  removeIdsFromSet,
+  saveNewWorkout,
+  toggleIdInSet,
+  updateCheckedExercises,
+} from './day-detail';
 import './day-detail.scss';
 
 export const DayDetail = () => {
@@ -30,16 +39,18 @@ export const DayDetail = () => {
   const [checkedExercises, setCheckedExercises] = useState<Map<string, Set<string>>>(new Map());
   const [dayWorkouts, setDayWorkouts] = useState<DayWorkout[]>([]);
   const [editingExerciseId, setEditingExerciseId] = useState<string | null>(null);
+  const [elapsedDisplay, setElapsedDisplay] = useState<string | null>(null);
   const [expandedExerciseIds, setExpandedExerciseIds] = useState<Set<string>>(new Set());
+  const [newExerciseMuscles, setNewExerciseMuscles] = useState('');
+  const [newExerciseName, setNewExerciseName] = useState('');
   const [pendingDeleteWorkoutId, setPendingDeleteWorkoutId] = useState<string | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showAddExerciseForm, setShowAddExerciseForm] = useState<string | null>(null);
   const [showBulkDeleteWorkoutId, setShowBulkDeleteWorkoutId] = useState<string | null>(null);
-  const [newExerciseMuscles, setNewExerciseMuscles] = useState('');
-  const [newExerciseName, setNewExerciseName] = useState('');
 
   const date = dateId ? parseDateId(dateId) : new Date();
   const dateLabel = formatDateLabel(date);
+  const isToday = dateId === formatDateId(new Date());
 
   useEffect(() => {
     if (dateId) {
@@ -47,8 +58,21 @@ export const DayDetail = () => {
     }
   }, [dateId]);
 
-  const getCheckedForWorkout = (workoutId: string): Set<string> =>
-    checkedExercises.get(workoutId) ?? new Set();
+  useEffect(() => {
+    const { display, isLive } = computeElapsedDisplay(dayWorkouts);
+    setElapsedDisplay(display);
+
+    if (!isLive) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const { display: updated } = computeElapsedDisplay(dayWorkouts);
+      setElapsedDisplay(updated);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [dayWorkouts]);
 
   const handleAddExercise = async (workoutId: string) => {
     const workout = dayWorkouts.find((w) => w.id === workoutId);
@@ -57,34 +81,8 @@ export const DayDetail = () => {
       return;
     }
 
-    const muscles = newExerciseMuscles
-      .split(',')
-      .map((m) => m.trim())
-      .filter(Boolean);
-
-    const defaultSet: ExerciseSet = {
-      completedAt: null,
-      id: makeSetId(),
-      notes: '',
-      reps: 10,
-      setNumber: 1,
-      totalWeight: 0,
-      weights: [0],
-    };
-
-    const newExercise: Exercise = {
-      completedAt: null,
-      id: makeExerciseId(),
-      muscles,
-      name: newExerciseName.trim(),
-      order: workout.exercises.length,
-      sets: [defaultSet],
-    };
-
-    await persistWorkout({
-      ...workout,
-      exercises: [...workout.exercises, newExercise],
-    });
+    const updated = appendExerciseToWorkout(workout, newExerciseName.trim(), newExerciseMuscles);
+    await persistWorkout(updated);
 
     setNewExerciseMuscles('');
     setNewExerciseName('');
@@ -96,35 +94,7 @@ export const DayDetail = () => {
       return;
     }
 
-    const exercises: Exercise[] = template
-      ? template.exercises.map((ex, index) => ({
-          completedAt: null,
-          id: makeExerciseId(),
-          muscles: [...ex.muscles],
-          name: ex.name,
-          order: index,
-          sets: ex.sets.map((s, sIndex) => ({
-            completedAt: null,
-            id: makeSetId(),
-            notes: s.notes,
-            reps: s.reps,
-            setNumber: sIndex + 1,
-            totalWeight: calculateTotalWeight(s.weights),
-            weights: [...s.weights],
-          })),
-        }))
-      : [];
-
-    const workout: DayWorkout = {
-      completedAt: null,
-      date: dateId,
-      exercises,
-      id: makeWorkoutId(),
-      startedAt: Date.now(),
-      workoutName,
-    };
-
-    await saveWorkout(workout);
+    await saveNewWorkout(dateId, workoutName, template);
     setShowAddDialog(false);
     await loadDayData(dateId);
     showToast(`Added "${workoutName}"`);
@@ -132,18 +102,15 @@ export const DayDetail = () => {
 
   const handleBulkDelete = async (workoutId: string) => {
     const workout = dayWorkouts.find((w) => w.id === workoutId);
-    const checked = getCheckedForWorkout(workoutId);
+    const checked = getCheckedForWorkout(checkedExercises, workoutId);
 
     if (!workout) {
       return;
     }
 
-    const updated: DayWorkout = {
-      ...workout,
-      exercises: workout.exercises.filter((e) => !checked.has(e.id)),
-    };
-
+    const updated = filterUncheckedExercises(workout, checked);
     await persistWorkout(updated);
+
     setCheckedExercises((prev) => {
       const next = new Map(prev);
       next.delete(workoutId);
@@ -154,24 +121,7 @@ export const DayDetail = () => {
   };
 
   const handleCheckChange = (workoutId: string, exerciseId: string, checked: boolean) => {
-    setCheckedExercises((prev) => {
-      const next = new Map(prev);
-      const workoutSet = new Set(next.get(workoutId) ?? []);
-
-      if (checked) {
-        workoutSet.add(exerciseId);
-      } else {
-        workoutSet.delete(exerciseId);
-      }
-
-      if (workoutSet.size === 0) {
-        next.delete(workoutId);
-      } else {
-        next.set(workoutId, workoutSet);
-      }
-
-      return next;
-    });
+    setCheckedExercises((prev) => updateCheckedExercises(prev, workoutId, exerciseId, checked));
   };
 
   const handleCloneExercise = async (workoutId: string, exerciseIndex: number) => {
@@ -181,25 +131,9 @@ export const DayDetail = () => {
       return;
     }
 
-    const source = workout.exercises[exerciseIndex];
-    const cloned: Exercise = {
-      ...source,
-      completedAt: null,
-      id: makeExerciseId(),
-      order: workout.exercises.length,
-      sets: source.sets.map((s) => ({
-        ...s,
-        completedAt: null,
-        id: makeSetId(),
-      })),
-    };
-
-    await persistWorkout({
-      ...workout,
-      exercises: [...workout.exercises, cloned],
-    });
-
-    showToast(`Cloned "${source.name}"`);
+    const updated = cloneExerciseInWorkout(workout, exerciseIndex);
+    await persistWorkout(updated);
+    showToast(`Cloned "${workout.exercises[exerciseIndex].name}"`);
   };
 
   const handleConfirmDeleteWorkout = async () => {
@@ -220,12 +154,8 @@ export const DayDetail = () => {
       return;
     }
 
-    const name = workout.exercises[exerciseIndex].name;
-    const exercises = workout.exercises
-      .filter((_, i) => i !== exerciseIndex)
-      .map((e, i) => ({ ...e, order: i }));
-
-    await persistWorkout({ ...workout, exercises });
+    const { name, updated } = removeExerciseFromWorkout(workout, exerciseIndex);
+    await persistWorkout(updated);
     showToast(`Deleted "${name}"`);
   };
 
@@ -240,20 +170,13 @@ export const DayDetail = () => {
       return;
     }
 
-    const exercises = [...workout.exercises];
-    const targetIndex = direction === 'up' ? exerciseIndex - 1 : exerciseIndex + 1;
+    const updated = moveExerciseInWorkout(workout, exerciseIndex, direction);
 
-    if (targetIndex < 0 || targetIndex >= exercises.length) {
+    if (!updated) {
       return;
     }
 
-    [exercises[exerciseIndex], exercises[targetIndex]] = [
-      exercises[targetIndex],
-      exercises[exerciseIndex],
-    ];
-    const reordered = exercises.map((e, i) => ({ ...e, order: i }));
-
-    await persistWorkout({ ...workout, exercises: reordered });
+    await persistWorkout(updated);
   };
 
   const handleUpdateExercise = async (
@@ -268,14 +191,8 @@ export const DayDetail = () => {
       return;
     }
 
-    const exercises = workout.exercises.map((e, i) => (i === exerciseIndex ? updated : e));
-    const allExercisesComplete = exercises.every((e) => e.completedAt);
-
-    await persistWorkout({
-      ...workout,
-      completedAt: allExercisesComplete ? Date.now() : null,
-      exercises,
-    });
+    const updatedWorkout = applyExerciseUpdate(workout, exerciseIndex, updated);
+    await persistWorkout(updatedWorkout);
 
     if (allSetsJustCompleted) {
       setExpandedExerciseIds((prev) => {
@@ -284,35 +201,27 @@ export const DayDetail = () => {
         return next;
       });
 
-      const nextIncomplete = exercises.findIndex((e, i) => i > exerciseIndex && !e.completedAt);
+      const nextIdx = findNextIncompleteIndex(updatedWorkout.exercises, exerciseIndex);
 
-      if (nextIncomplete !== -1) {
+      if (nextIdx !== -1) {
         setTimeout(() => {
-          setExpandedExerciseIds((prev) => new Set([...prev, exercises[nextIncomplete].id]));
+          setExpandedExerciseIds(
+            (prev) => new Set([...prev, updatedWorkout.exercises[nextIdx].id]),
+          );
         }, 300);
       }
     }
   };
 
   const loadDayData = async (id: string) => {
-    const workouts = await getWorkoutsByDate(id);
-    setDayWorkouts(workouts);
-
-    const all = await getAllWorkouts();
-    setAllWorkouts(all);
-
-    const loadedTemplates = await getAllTemplates();
-    templates.value = loadedTemplates;
+    const data = await fetchDayData(id);
+    setDayWorkouts(data.dayWorkouts);
+    setAllWorkouts(data.allWorkouts);
+    templates.value = data.templates;
   };
 
-  const isToday = dateId === formatDateId(new Date());
-
   const persistWorkout = async (updated: DayWorkout) => {
-    await saveWorkout(updated);
-
-    if (isToday) {
-      await syncWorkoutToTemplate(updated);
-    }
+    await persistAndSync(updated, isToday);
 
     if (dateId) {
       await loadDayData(dateId);
@@ -338,6 +247,7 @@ export const DayDetail = () => {
             </button>
           ) : undefined
         }
+        subtitle={elapsedDisplay ?? '\u00A0'}
         title={dateLabel}
       />
 
@@ -357,7 +267,7 @@ export const DayDetail = () => {
           )}
 
           {dayWorkouts.map((workout) => {
-            const checked = getCheckedForWorkout(workout.id);
+            const checked = getCheckedForWorkout(checkedExercises, workout.id);
             const exerciseCount = workout.exercises.length;
             const totalVolume = formatVolume(workout.exercises);
             const allExercisesComplete =
@@ -385,13 +295,8 @@ export const DayDetail = () => {
                     <button
                       className="day-detail__collapse-all-btn"
                       onClick={() => {
-                        setExpandedExerciseIds((prev) => {
-                          const next = new Set(prev);
-                          for (const ex of workout.exercises) {
-                            next.delete(ex.id);
-                          }
-                          return next;
-                        });
+                        const ids = workout.exercises.map((ex) => ex.id);
+                        setExpandedExerciseIds((prev) => removeIdsFromSet(prev, ids));
                       }}
                       type="button"
                     >
@@ -444,17 +349,7 @@ export const DayDetail = () => {
                         setEditingExerciseId(editingExerciseId === exercise.id ? null : exercise.id)
                       }
                       onToggleExpanded={() =>
-                        setExpandedExerciseIds((prev) => {
-                          const next = new Set(prev);
-
-                          if (next.has(exercise.id)) {
-                            next.delete(exercise.id);
-                          } else {
-                            next.add(exercise.id);
-                          }
-
-                          return next;
-                        })
+                        setExpandedExerciseIds((prev) => toggleIdInSet(prev, exercise.id))
                       }
                       onUpdate={(updated, allSetsJustCompleted) =>
                         handleUpdateExercise(workout.id, index, updated, allSetsJustCompleted)
@@ -548,7 +443,7 @@ export const DayDetail = () => {
         <ConfirmDialog
           confirmLabel="Delete Workout"
           danger
-          message="Delete this entire workout and all its exercises from the DB? This cannot be undone."
+          message="Delete this entire workout and all its exercises from this date? This cannot be undone."
           onCancel={() => setPendingDeleteWorkoutId(null)}
           onConfirm={handleConfirmDeleteWorkout}
           title="Delete Workout"
@@ -559,7 +454,7 @@ export const DayDetail = () => {
         <ConfirmDialog
           confirmLabel="Delete"
           danger
-          message={`Delete ${getCheckedForWorkout(showBulkDeleteWorkoutId).size} selected exercise(s) from the DB? This cannot be undone.`}
+          message={`Delete ${getCheckedForWorkout(checkedExercises, showBulkDeleteWorkoutId).size} selected exercise(s) from the DB? This will be deleted from the tempalte and cannot be undone.`}
           onCancel={() => setShowBulkDeleteWorkoutId(null)}
           onConfirm={() => handleBulkDelete(showBulkDeleteWorkoutId)}
           title="Delete Exercises"

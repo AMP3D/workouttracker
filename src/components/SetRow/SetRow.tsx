@@ -1,19 +1,16 @@
 import { useRef, useState } from 'react';
 import { DocumentDuplicateIcon, TrashIcon } from '../../assets/icons';
-import type { ExerciseSet } from '../../models';
-import { calculateTotalWeight, formatWeight, parseWeightsString } from '../../utils/weight-utils';
+import { formatWeight } from '../../utils/weight-utils';
 import { ConfirmDialog } from '../ConfirmDialog/ConfirmDialog';
 import { LiveTimestamp } from '../LiveTimestamp/LiveTimestamp';
+import {
+  applyWeightsToSet,
+  flashLastChild,
+  type SetRowProps,
+  updateSetNotes,
+  updateSetReps,
+} from './set-row';
 import './set-row.scss';
-
-interface SetRowProps {
-  editing: boolean;
-  onChange: (updated: ExerciseSet) => void;
-  onClone: () => void;
-  onDelete: () => void;
-  onToggleComplete: () => void;
-  set: ExerciseSet;
-}
 
 export const SetRow = ({
   editing,
@@ -35,35 +32,21 @@ export const SetRow = ({
     onClone();
 
     requestAnimationFrame(() => {
-      const parent = rowRef.current?.parentElement;
-      const lastChild = parent?.lastElementChild as HTMLElement | null;
-
-      if (lastChild) {
-        lastChild.classList.add('set-row--flash');
-        lastChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-        setTimeout(() => {
-          lastChild.classList.remove('set-row--flash');
-        }, 800);
-      }
+      flashLastChild(rowRef.current?.parentElement);
     });
   };
 
   const handleNotesChange = (notes: string) => {
-    onChange({ ...set, notes });
+    onChange(updateSetNotes(set, notes));
   };
 
   const handleRepsChange = (value: string) => {
-    const reps = parseInt(value, 10) || 0;
-    onChange({ ...set, reps });
+    onChange(updateSetReps(set, value));
   };
 
   const handleWeightsChange = (value: string) => {
     setWeightsStr(value);
-    const weights = parseWeightsString(value);
-    const totalWeight = calculateTotalWeight(weights);
-
-    onChange({ ...set, totalWeight, weights });
+    onChange(applyWeightsToSet(set, value));
   };
 
   return (

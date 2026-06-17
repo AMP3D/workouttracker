@@ -4,7 +4,7 @@ import './header.scss';
 interface HeaderProps {
   leftContent?: ReactNode;
   rightContent?: ReactNode;
-  subtitle?: string;
+  subtitle?: ReactNode;
   title: string;
 }
 

@@ -13,19 +13,20 @@ import { Header } from '../../components/Header/Header';
 import { Menu } from '../../components/Menu/Menu';
 import { Toast } from '../../components/Toast/Toast';
 import { WorkoutRow } from '../../components/WorkoutRow/WorkoutRow';
-import type { DayWorkout } from '../../models';
 import { APP_NAME } from '../../models';
 import { showToast } from '../../state/app-state';
 import { templates, weekWorkouts } from '../../state/workout-state';
 import { loadDefaultData } from '../../storage/default-data';
 import { clearDatabase, exportDatabase, importDatabase } from '../../storage/import-export';
-import { getAllTemplates, getAllWorkouts, getWorkoutsByDate } from '../../storage/workout-storage';
 import { formatDateId, formatWeekRange, getWeekDates } from '../../utils/date-utils';
+import {
+  CONFIRM_MESSAGES,
+  type DestructiveAction,
+  fetchHomeData,
+  hasExistingData,
+  ICON_STYLE,
+} from './home-utils';
 import './home.scss';
-
-type DestructiveAction = 'clear' | 'import' | 'loadDefaults';
-
-const ICON_STYLE = { height: '1rem', width: '1rem' };
 
 export const Home = () => {
   const navigate = useNavigate();
@@ -42,24 +43,6 @@ export const Home = () => {
   useEffect(() => {
     loadData();
   }, [weekOffset]);
-
-  const confirmMessages: Record<DestructiveAction, { message: string; title: string }> = {
-    clear: {
-      message:
-        'This will permanently delete ALL workouts and templates. This is irreversible. Consider exporting your data first.',
-      title: 'Clear Database',
-    },
-    import: {
-      message:
-        'Importing will merge data into your existing database. Consider exporting a backup first.',
-      title: 'Import Database',
-    },
-    loadDefaults: {
-      message:
-        'This will load the default workout templates. Existing templates with the same name will not be overwritten. Consider exporting a backup first.',
-      title: 'Load Default Templates',
-    },
-  };
 
   const handleClearDb = async () => {
     await clearDatabase();
@@ -150,29 +133,10 @@ export const Home = () => {
     setPendingAction('clear');
   };
 
-  const hasExistingData = async (): Promise<boolean> => {
-    const existingTemplates = await getAllTemplates();
-    const existingWorkouts = await getAllWorkouts();
-
-    return existingTemplates.length > 0 || existingWorkouts.length > 0;
-  };
-
   const loadData = async () => {
-    const loadedTemplates = await getAllTemplates();
-    templates.value = loadedTemplates;
-
-    const newMap = new Map<string, DayWorkout[]>();
-
-    for (const date of weekDates) {
-      const dateId = formatDateId(date);
-      const dayWorkouts = await getWorkoutsByDate(dateId);
-
-      if (dayWorkouts.length > 0) {
-        newMap.set(dateId, dayWorkouts);
-      }
-    }
-
-    weekWorkouts.value = newMap;
+    const data = await fetchHomeData(weekDates);
+    templates.value = data.loadedTemplates;
+    weekWorkouts.value = data.weekMap;
   };
 
   const performImport = async (file: File) => {
@@ -213,7 +177,7 @@ export const Home = () => {
     },
   ];
 
-  const activeConfirm = pendingAction ? confirmMessages[pendingAction] : null;
+  const activeConfirm = pendingAction ? CONFIRM_MESSAGES[pendingAction] : null;
 
   return (
     <>

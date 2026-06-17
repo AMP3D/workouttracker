@@ -8,27 +8,18 @@ import {
   PlusIcon,
   TrashIcon,
 } from '../../assets/icons';
-import type { Exercise, ExerciseSet } from '../../models';
-import { makeSetId } from '../../utils/id-utils';
+import type { ExerciseSet } from '../../models';
 import { SetRow } from '../SetRow/SetRow';
+import {
+  addSetToExercise,
+  cloneSetInExercise,
+  deleteSetFromExercise,
+  type ExerciseItemProps,
+  toggleSetCompletion,
+  updateExerciseMuscles,
+  updateSetInExercise,
+} from './exercise-item';
 import './exercise-item.scss';
-
-interface ExerciseItemProps {
-  checked: boolean;
-  editing: boolean;
-  exercise: Exercise;
-  expanded: boolean;
-  isFirst: boolean;
-  isLast: boolean;
-  onCheckChange: (checked: boolean) => void;
-  onClone: () => void;
-  onDelete: () => void;
-  onMoveDown: () => void;
-  onMoveUp: () => void;
-  onToggleEditing: () => void;
-  onToggleExpanded: () => void;
-  onUpdate: (exercise: Exercise, allSetsJustCompleted?: boolean) => void;
-}
 
 export const ExerciseItem = ({
   checked,
@@ -61,68 +52,27 @@ export const ExerciseItem = ({
   }, [allComplete]);
 
   const handleAddSet = () => {
-    const lastSet = exercise.sets[exercise.sets.length - 1];
-    const newSet: ExerciseSet = {
-      completedAt: null,
-      id: makeSetId(),
-      notes: '',
-      reps: lastSet?.reps ?? 10,
-      setNumber: totalSets + 1,
-      totalWeight: lastSet?.totalWeight ?? 0,
-      weights: lastSet?.weights ?? [0],
-    };
-
-    onUpdate({ ...exercise, sets: [...exercise.sets, newSet] });
+    onUpdate(addSetToExercise(exercise));
   };
 
   const handleCloneSet = (setIndex: number) => {
-    const source = exercise.sets[setIndex];
-    const cloned: ExerciseSet = {
-      ...source,
-      completedAt: null,
-      id: makeSetId(),
-      setNumber: totalSets + 1,
-    };
-
-    const sets = [...exercise.sets, cloned];
-    const renumbered = sets.map((s, i) => ({ ...s, setNumber: i + 1 }));
-
-    onUpdate({ ...exercise, sets: renumbered });
+    onUpdate(cloneSetInExercise(exercise, setIndex));
   };
 
   const handleDeleteSet = (setIndex: number) => {
-    const sets = exercise.sets
-      .filter((_, i) => i !== setIndex)
-      .map((s, i) => ({ ...s, setNumber: i + 1 }));
-
-    onUpdate({ ...exercise, sets });
+    onUpdate(deleteSetFromExercise(exercise, setIndex));
   };
 
   const handleMusclesChange = (value: string) => {
-    const muscles = value
-      .split(',')
-      .map((m) => m.trim())
-      .filter(Boolean);
-    onUpdate({ ...exercise, muscles });
+    onUpdate(updateExerciseMuscles(exercise, value));
   };
 
   const handleSetChange = (setIndex: number, updated: ExerciseSet) => {
-    const sets = exercise.sets.map((s, i) => (i === setIndex ? updated : s));
-    onUpdate({ ...exercise, sets });
+    onUpdate(updateSetInExercise(exercise, setIndex, updated));
   };
 
   const handleToggleSetComplete = (setIndex: number) => {
-    const set = exercise.sets[setIndex];
-    const completedAt = set.completedAt ? null : Date.now();
-    const sets = exercise.sets.map((s, i) => (i === setIndex ? { ...s, completedAt } : s));
-
-    const nowAllComplete = sets.every((s) => s.completedAt);
-
-    onUpdate({
-      ...exercise,
-      completedAt: nowAllComplete ? Date.now() : null,
-      sets,
-    });
+    onUpdate(toggleSetCompletion(exercise, setIndex));
   };
 
   return (
