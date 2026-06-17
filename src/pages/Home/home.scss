@@ -1,0 +1,49 @@
+.home {
+  display: flex;
+  flex-direction: column;
+  padding: $spacing-lg;
+
+  &__week-list {
+    border-radius: $radius-md;
+    box-shadow: 0 0.0625rem 0.25rem rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+  }
+
+  &__week-nav {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: $spacing-md;
+  }
+
+  &__week-nav-btn {
+    align-items: center;
+    border: 1px solid $border-color;
+    border-radius: $radius-sm;
+    display: flex;
+    height: 2rem;
+    justify-content: center;
+    width: 2rem;
+
+    &:active {
+      background-color: rgba($strong-cyan, 0.1);
+    }
+
+    svg {
+      height: 1rem;
+      width: 1rem;
+    }
+  }
+
+  &__week-range {
+    color: $text-dark;
+    font-size: $font-size-sm;
+    font-weight: 600;
+  }
+
+  &__today-btn {
+    color: $strong-cyan;
+    font-size: $font-size-xs;
+    font-weight: 700;
+  }
+}

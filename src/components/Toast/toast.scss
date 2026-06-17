@@ -1,0 +1,25 @@
+.toast {
+  animation: slideUp 0.3s ease-out;
+  background-color: $dark-teal;
+  border-radius: $radius-md;
+  bottom: $spacing-xl;
+  color: $primary-text;
+  font-size: $font-size-sm;
+  font-weight: 500;
+  left: 50%;
+  padding: $spacing-md $spacing-lg;
+  position: fixed;
+  transform: translateX(-50%);
+  z-index: 400;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}

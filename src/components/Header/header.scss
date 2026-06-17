@@ -1,0 +1,76 @@
+.header {
+  align-items: center;
+  background-color: $dark-teal;
+  color: $primary-text;
+  display: flex;
+  height: $header-height;
+  justify-content: space-between;
+  left: 0;
+  padding: 0 $spacing-md;
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 100;
+
+  &__left {
+    align-items: center;
+    display: flex;
+    gap: $spacing-sm;
+    min-width: 0;
+  }
+
+  &__right {
+    align-items: center;
+    display: flex;
+    gap: $spacing-xs;
+    flex-shrink: 0;
+  }
+
+  &__back-btn {
+    align-items: center;
+    display: flex;
+    padding: $spacing-xs;
+  }
+
+  &__title {
+    font-size: $font-size-lg;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__subtitle {
+    font-size: $font-size-sm;
+    font-weight: 400;
+    opacity: 0.85;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__title-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__icon-btn {
+    align-items: center;
+    border-radius: $radius-sm;
+    display: flex;
+    height: 2.25rem;
+    justify-content: center;
+    transition: background-color 0.15s;
+    width: 2.25rem;
+
+    &:active {
+      background-color: rgba(255, 255, 255, 0.15);
+    }
+
+    svg {
+      height: 1.375rem;
+      width: 1.375rem;
+    }
+  }
+}

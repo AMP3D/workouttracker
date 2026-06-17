@@ -1,0 +1,235 @@
+.day-detail {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+  padding: $spacing-lg;
+
+  &__add-exercise {
+    align-items: center;
+    border: 0.125rem dashed $border-color;
+    border-radius: 0 0 $radius-md $radius-md;
+    color: $text-muted;
+    display: flex;
+    gap: $spacing-sm;
+    justify-content: center;
+    padding: $spacing-md;
+    transition: all 0.15s;
+
+    &:active {
+      border-color: $strong-cyan;
+      color: $strong-cyan;
+    }
+
+    svg {
+      height: 1.25rem;
+      width: 1.25rem;
+    }
+  }
+
+  &__add-workout-btn {
+    align-items: center;
+    background-color: $card-bg;
+    border: 0.125rem dashed $border-color;
+    border-radius: $radius-md;
+    color: $text-muted;
+    display: flex;
+    font-weight: 600;
+    gap: $spacing-sm;
+    justify-content: center;
+    padding: $spacing-lg;
+    transition: all 0.15s;
+
+    &:active {
+      border-color: $strong-cyan;
+      color: $strong-cyan;
+    }
+
+    svg {
+      height: 1.25rem;
+      width: 1.25rem;
+    }
+  }
+
+  &__bulk-btn {
+    align-items: center;
+    border-radius: $radius-sm;
+    color: $grapefruit-pink;
+    display: flex;
+    font-size: $font-size-sm;
+    font-weight: 600;
+    gap: $spacing-xs;
+    padding: $spacing-xs $spacing-sm;
+
+    &:active {
+      background-color: rgba($grapefruit-pink, 0.1);
+    }
+
+    svg {
+      height: 1rem;
+      width: 1rem;
+    }
+  }
+
+  &__collapse-all-btn {
+    border: 1px solid $border-color;
+    border-radius: $radius-sm;
+    color: $text-muted;
+    padding: $spacing-xs;
+
+    &:active {
+      border-color: $strong-cyan;
+      color: $strong-cyan;
+    }
+
+    svg {
+      height: 1rem;
+      width: 1rem;
+    }
+  }
+
+  &__delete-workout-btn {
+    color: $text-muted;
+    padding: $spacing-xs;
+
+    &:active {
+      color: $grapefruit-pink;
+    }
+
+    svg {
+      height: 1rem;
+      width: 1rem;
+    }
+  }
+
+  &__empty {
+    align-items: center;
+    display: flex;
+    flex: 1;
+    justify-content: center;
+    min-height: 60vh;
+  }
+
+  &__empty-add {
+    align-items: center;
+    background-color: $card-bg;
+    border: 0.125rem dashed $border-color;
+    border-radius: $radius-lg;
+    color: $text-muted;
+    display: flex;
+    flex-direction: column;
+    font-size: $font-size-lg;
+    font-weight: 600;
+    gap: $spacing-md;
+    padding: $spacing-xl * 2;
+    transition: all 0.15s;
+
+    &:active {
+      border-color: $strong-cyan;
+      color: $strong-cyan;
+    }
+
+    svg {
+      height: 3rem;
+      width: 3rem;
+    }
+  }
+
+  &__exercises {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__selected-count {
+    color: $text-muted;
+    font-size: $font-size-xs;
+    font-weight: 600;
+  }
+
+  &__toolbar {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    padding: $spacing-sm $spacing-lg;
+  }
+
+  &__workout-actions {
+    align-items: center;
+    display: flex;
+    gap: $spacing-xs;
+  }
+
+  &__workout-header {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    padding: $spacing-md $spacing-lg;
+  }
+
+  &__workout-info {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-xs;
+  }
+
+  &__workout-name {
+    font-size: $font-size-lg;
+    font-weight: 700;
+  }
+
+  &__workout-section {
+    background-color: $card-bg;
+    border-radius: $radius-md;
+    overflow: hidden;
+
+    &--completed {
+      background-color: rgba($royal-gold, 0.08);
+      border-left: 0.1875rem solid $royal-gold;
+    }
+  }
+
+  &__workout-stats {
+    color: $text-muted;
+    font-size: $font-size-xs;
+  }
+}
+
+.add-exercise-form {
+  border-radius: 0 0 $radius-md $radius-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  padding: $spacing-lg;
+
+  &__row {
+    display: flex;
+    gap: $spacing-sm;
+  }
+
+  &__input {
+    flex: 1;
+    font-size: $font-size-sm;
+    padding: $spacing-sm;
+  }
+
+  &__actions {
+    display: flex;
+    gap: $spacing-sm;
+    justify-content: flex-end;
+  }
+
+  &__btn {
+    border-radius: $radius-sm;
+    font-size: $font-size-sm;
+    font-weight: 600;
+    padding: $spacing-xs $spacing-md;
+
+    &--cancel {
+      color: $text-muted;
+    }
+
+    &--add {
+      background-color: $strong-cyan;
+      color: $primary-text;
+    }
+  }
+}

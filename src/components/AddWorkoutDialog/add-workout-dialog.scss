@@ -1,0 +1,51 @@
+.add-workout-dialog {
+  &__input {
+    margin-bottom: $spacing-sm;
+    width: 100%;
+  }
+
+  &__section-label {
+    color: $text-muted;
+    font-size: $font-size-xs;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    margin-bottom: $spacing-sm;
+    text-transform: uppercase;
+  }
+
+  &__template-item {
+    border: 1px solid $border-color;
+    border-radius: $radius-sm;
+    font-size: $font-size-sm;
+    padding: $spacing-sm $spacing-md;
+    text-align: left;
+    transition: all 0.15s;
+
+    &:active {
+      background-color: rgba($strong-cyan, 0.1);
+      border-color: $strong-cyan;
+    }
+
+    &--selected {
+      background-color: rgba($strong-cyan, 0.1);
+      border-color: $strong-cyan;
+      color: $dark-teal;
+      font-weight: 600;
+    }
+
+    &--suggested {
+      border-color: rgba($royal-gold, 0.4);
+
+      &:active {
+        border-color: $royal-gold;
+      }
+    }
+  }
+
+  &__template-list {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-xs;
+    margin-bottom: $spacing-lg;
+  }
+}

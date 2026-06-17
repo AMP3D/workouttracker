@@ -1,0 +1,55 @@
+.workout-row {
+  align-items: center;
+  background-color: $card-bg;
+  border-bottom: 1px solid $border-color;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  padding: $spacing-md $spacing-lg;
+  transition: background-color 0.15s;
+
+  &:first-child {
+    border-radius: $radius-md $radius-md 0 0;
+  }
+
+  &:last-child {
+    border-bottom: none;
+    border-radius: 0 0 $radius-md $radius-md;
+  }
+
+  &:only-child {
+    border-radius: $radius-md;
+  }
+
+  &:active {
+    background-color: rgba($strong-cyan, 0.05);
+  }
+
+  &--today {
+    border-left: 0.1875rem solid $strong-cyan;
+  }
+
+  &--empty {
+    opacity: 0.6;
+  }
+
+  &__date {
+    color: $text-dark;
+    font-size: $font-size-base;
+    font-weight: 500;
+  }
+
+  &__multi {
+    align-items: flex-end;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  &__workout-name {
+    color: $text-muted;
+    font-size: $font-size-sm;
+    font-weight: 500;
+    text-align: right;
+  }
+}

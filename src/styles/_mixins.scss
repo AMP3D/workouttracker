@@ -1,0 +1,26 @@
+@use 'variables' as *;
+
+@mixin btn-base {
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+  font-weight: 600;
+  padding: $spacing-sm $spacing-lg;
+}
+
+@mixin btn-cancel {
+  @include btn-base;
+  background-color: $border-color;
+  color: $text-dark;
+}
+
+@mixin btn-confirm {
+  @include btn-base;
+  background-color: $strong-cyan;
+  color: $primary-text;
+}
+
+@mixin btn-danger {
+  @include btn-base;
+  background-color: $grapefruit-pink;
+  color: $primary-text;
+}

@@ -1,0 +1,175 @@
+.logs {
+  display: flex;
+  flex-direction: column;
+  padding: $spacing-lg;
+
+  &__calendar {
+    background-color: $card-bg;
+    border-radius: $radius-md;
+    margin-bottom: $spacing-lg;
+    padding: $spacing-lg;
+  }
+
+  &__calendar-header {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: $spacing-md;
+  }
+
+  &__month-label {
+    font-size: $font-size-base;
+    font-weight: 700;
+  }
+
+  &__nav-btns {
+    display: flex;
+    gap: $spacing-sm;
+  }
+
+  &__nav-btn {
+    align-items: center;
+    border: 1px solid $border-color;
+    border-radius: $radius-sm;
+    display: flex;
+    height: 2rem;
+    justify-content: center;
+    width: 2rem;
+
+    &:active {
+      background-color: rgba($strong-cyan, 0.1);
+    }
+
+    svg {
+      height: 1rem;
+      width: 1rem;
+    }
+  }
+
+  &__weekdays {
+    display: grid;
+    gap: 0.125rem;
+    grid-template-columns: repeat(7, 1fr);
+    margin-bottom: $spacing-xs;
+  }
+
+  &__weekday {
+    color: $text-muted;
+    font-size: $font-size-xs;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  &__days {
+    display: grid;
+    gap: 0.125rem;
+    grid-template-columns: repeat(7, 1fr);
+  }
+
+  &__day {
+    align-items: center;
+    border-radius: $radius-sm;
+    cursor: pointer;
+    display: flex;
+    font-size: $font-size-sm;
+    height: 2.25rem;
+    justify-content: center;
+    transition: all 0.15s;
+
+    &:active {
+      background-color: rgba($strong-cyan, 0.1);
+    }
+
+    &--today {
+      font-weight: 700;
+    }
+
+    &--selected {
+      background-color: $strong-cyan;
+      color: $primary-text;
+      font-weight: 700;
+    }
+
+    &--has-workout {
+      position: relative;
+
+      &::after {
+        background-color: $strong-cyan;
+        border-radius: 50%;
+        bottom: 0.125rem;
+        content: '';
+        height: 0.25rem;
+        left: 50%;
+        position: absolute;
+        transform: translateX(-50%);
+        width: 0.25rem;
+      }
+    }
+
+    &--other-month {
+      opacity: 0.3;
+    }
+  }
+
+  &__details {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-sm;
+  }
+
+  &__no-data {
+    color: $text-muted;
+    font-size: $font-size-sm;
+    padding: $spacing-xl;
+    text-align: center;
+  }
+
+  &__workout-card {
+    background-color: $card-bg;
+    border-radius: $radius-md;
+    overflow: hidden;
+  }
+
+  &__workout-header {
+    align-items: center;
+    border-bottom: 1px solid $border-color;
+    display: flex;
+    justify-content: space-between;
+    padding: $spacing-md $spacing-lg;
+  }
+
+  &__workout-name {
+    font-size: $font-size-base;
+    font-weight: 700;
+  }
+
+  &__workout-duration {
+    color: $text-muted;
+    font-size: $font-size-xs;
+  }
+
+  &__exercise-log {
+    border-bottom: 1px solid $border-color;
+    padding: $spacing-sm $spacing-lg;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  &__exercise-name {
+    font-size: $font-size-sm;
+    font-weight: 600;
+    margin-bottom: $spacing-xs;
+  }
+
+  &__set-log {
+    color: $text-muted;
+    font-size: $font-size-xs;
+    padding-left: $spacing-md;
+  }
+
+  &__set-completed {
+    color: $strong-cyan;
+  }
+}

@@ -1,0 +1,50 @@
+.menu {
+  position: relative;
+
+  &__overlay {
+    height: 100%;
+    left: 0;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 200;
+  }
+
+  &__dropdown {
+    background-color: $card-bg;
+    border-radius: $radius-md;
+    box-shadow: 0 0.25rem 1.25rem rgba(0, 0, 0, 0.15);
+    min-width: 13rem;
+    overflow: hidden;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    z-index: 201;
+  }
+
+  &__item {
+    align-items: center;
+    color: $text-dark;
+    display: flex;
+    font-size: $font-size-sm;
+    white-space: nowrap;
+    gap: $spacing-sm;
+    padding: $spacing-md $spacing-lg;
+    transition: background-color 0.15s;
+    width: 100%;
+
+    &:active {
+      background-color: rgba($strong-cyan, 0.1);
+    }
+
+    svg {
+      height: 1.125rem;
+      width: 1.125rem;
+    }
+  }
+
+  &__divider {
+    background-color: $border-color;
+    height: 1px;
+  }
+}
