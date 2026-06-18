@@ -3,6 +3,7 @@ import { makeSetId } from '../../utils/id-utils';
 
 export interface ExerciseItemProps {
   checked: boolean;
+  deleteMode: boolean;
   editing: boolean;
   exercise: Exercise;
   expanded: boolean;
@@ -12,6 +13,7 @@ export interface ExerciseItemProps {
   onCheckChange: (checked: boolean) => void;
   onClone: () => void;
   onDelete: () => void;
+  onDeleteModeStart: () => void;
   onMoveDown: () => void;
   onMoveUp: () => void;
   onToggleEditing: () => void;

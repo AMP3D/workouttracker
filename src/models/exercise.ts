@@ -1,4 +1,5 @@
-import type { ExerciseSet } from './exercise-set';
+import type { ExerciseSet } from './set';
+import type { SetTemplate } from './set';
 
 export interface Exercise {
   completedAt: number | null;
@@ -7,4 +8,10 @@ export interface Exercise {
   name: string;
   order: number;
   sets: ExerciseSet[];
+}
+
+export interface ExerciseTemplate {
+  muscles: string[];
+  name: string;
+  sets: SetTemplate[];
 }

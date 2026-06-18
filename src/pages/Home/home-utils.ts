@@ -1,12 +1,12 @@
 import type { DayWorkout, WorkoutTemplate } from '../../models';
+
+export type DestructiveAction = 'clear' | 'import' | 'loadDefaults';
 import {
   getAllTemplates,
   getAllWorkouts,
   getWorkoutsByDate,
 } from '../../storage/workout-storage';
 import { formatDateId } from '../../utils/date-utils';
-
-export type DestructiveAction = 'clear' | 'import' | 'loadDefaults';
 
 export const CONFIRM_MESSAGES: Record<DestructiveAction, { message: string; title: string }> = {
   clear: {

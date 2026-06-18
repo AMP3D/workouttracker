@@ -7,3 +7,9 @@ export interface ExerciseSet {
   totalWeight: number;
   weights: number[];
 }
+
+export interface SetTemplate {
+  notes: string;
+  reps: number;
+  weights: number[];
+}

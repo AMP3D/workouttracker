@@ -23,6 +23,7 @@ import './exercise-item.scss';
 
 export const ExerciseItem = ({
   checked,
+  deleteMode,
   editing,
   exercise,
   expanded,
@@ -32,6 +33,7 @@ export const ExerciseItem = ({
   onCheckChange,
   onClone,
   onDelete,
+  onDeleteModeStart,
   onMoveDown,
   onMoveUp,
   onToggleEditing,
@@ -88,16 +90,18 @@ export const ExerciseItem = ({
         .join(' ')}
     >
       <div className="exercise-item__header" onClick={onToggleExpanded}>
-        <input
-          checked={checked}
-          className="exercise-item__checkbox"
-          onChange={(e) => {
-            e.stopPropagation();
-            onCheckChange(e.target.checked);
-          }}
-          onClick={(e) => e.stopPropagation()}
-          type="checkbox"
-        />
+        {deleteMode && (
+          <input
+            checked={checked}
+            className="exercise-item__checkbox"
+            onChange={(e) => {
+              e.stopPropagation();
+              onCheckChange(e.target.checked);
+            }}
+            onClick={(e) => e.stopPropagation()}
+            type="checkbox"
+          />
+        )}
 
         <div className="exercise-item__info">
           <span className="exercise-item__name">{exercise.name}</span>
@@ -122,6 +126,19 @@ export const ExerciseItem = ({
         </div>
 
         <div className="exercise-item__meta">
+          {!deleteMode && (
+            <button
+              className="exercise-item__delete-mode-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteModeStart();
+              }}
+              type="button"
+            >
+              <TrashIcon />
+            </button>
+          )}
+
           <span className="exercise-item__progress">
             {completedSets}/{totalSets}
           </span>

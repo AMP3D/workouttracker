@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeftIcon, ChevronUpIcon, PlusIcon, TrashIcon } from '../../assets/icons';
+import {
+  ArrowLeftIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  PlusIcon,
+  TrashIcon,
+} from '../../assets/icons';
 import { AddWorkoutDialog } from '../../components/AddWorkoutDialog/AddWorkoutDialog';
 import { ConfirmDialog } from '../../components/ConfirmDialog/ConfirmDialog';
 import { ExerciseItem } from '../../components/ExerciseItem/ExerciseItem';
@@ -11,18 +17,18 @@ import { showToast } from '../../state/app-state';
 import { templates } from '../../state/workout-state';
 import { deleteWorkout } from '../../storage/workout-storage';
 import { formatDateId, formatDateLabel, parseDateId } from '../../utils/date-utils';
-import { formatVolume } from '../../utils/weight-utils';
 import {
+  addIdsToSet,
   appendExerciseToWorkout,
-  applyExerciseUpdate,
+  buildWorkoutSections,
   cloneExerciseInWorkout,
   computeElapsedDisplay,
   fetchDayData,
   filterUncheckedExercises,
-  findNextIncompleteIndex,
   getCheckedForWorkout,
   moveExerciseInWorkout,
   persistAndSync,
+  processExerciseUpdate,
   removeExerciseFromWorkout,
   removeIdsFromSet,
   saveNewWorkout,
@@ -38,6 +44,7 @@ export const DayDetail = () => {
   const [allWorkouts, setAllWorkouts] = useState<DayWorkout[]>([]);
   const [checkedExercises, setCheckedExercises] = useState<Map<string, Set<string>>>(new Map());
   const [dayWorkouts, setDayWorkouts] = useState<DayWorkout[]>([]);
+  const [deleteModeWorkoutId, setDeleteModeWorkoutId] = useState<string | null>(null);
   const [editingExerciseId, setEditingExerciseId] = useState<string | null>(null);
   const [elapsedDisplay, setElapsedDisplay] = useState<string | null>(null);
   const [expandedExerciseIds, setExpandedExerciseIds] = useState<Set<string>>(new Set());
@@ -74,6 +81,8 @@ export const DayDetail = () => {
 
     return () => clearInterval(interval);
   }, [dayWorkouts]);
+
+  const sections = buildWorkoutSections(dayWorkouts, checkedExercises);
 
   const handleAddExercise = async (workoutId: string) => {
     const workout = dayWorkouts.find((w) => w.id === workoutId);
@@ -117,8 +126,18 @@ export const DayDetail = () => {
       next.delete(workoutId);
       return next;
     });
+    setDeleteModeWorkoutId(null);
     setShowBulkDeleteWorkoutId(null);
     showToast(`Deleted ${checked.size} exercise(s)`);
+  };
+
+  const handleCancelDeleteMode = (workoutId: string) => {
+    setDeleteModeWorkoutId(null);
+    setCheckedExercises((prev) => {
+      const next = new Map(prev);
+      next.delete(workoutId);
+      return next;
+    });
   };
 
   const handleCheckChange = (workoutId: string, exerciseId: string, checked: boolean) => {
@@ -197,25 +216,21 @@ export const DayDetail = () => {
       return;
     }
 
-    const updatedWorkout = applyExerciseUpdate(workout, exerciseIndex, updated);
-    await persistWorkout(updatedWorkout);
+    const result = processExerciseUpdate(workout, exerciseIndex, updated, allSetsJustCompleted);
+    await persistWorkout(result.updatedWorkout);
 
-    if (allSetsJustCompleted) {
+    if (result.collapseId) {
       setExpandedExerciseIds((prev) => {
         const next = new Set(prev);
-        next.delete(updated.id);
+        next.delete(result.collapseId!);
         return next;
       });
+    }
 
-      const nextIdx = findNextIncompleteIndex(updatedWorkout.exercises, exerciseIndex);
-
-      if (nextIdx !== -1) {
-        setTimeout(() => {
-          setExpandedExerciseIds(
-            (prev) => new Set([...prev, updatedWorkout.exercises[nextIdx].id]),
-          );
-        }, 300);
-      }
+    if (result.expandId) {
+      setTimeout(() => {
+        setExpandedExerciseIds((prev) => new Set([...prev, result.expandId!]));
+      }, 300);
     }
   };
 
@@ -253,7 +268,7 @@ export const DayDetail = () => {
             </button>
           ) : undefined
         }
-        subtitle={elapsedDisplay ?? '\u00A0'}
+        subtitle={elapsedDisplay}
         title={dateLabel}
       />
 
@@ -272,18 +287,10 @@ export const DayDetail = () => {
             </div>
           )}
 
-          {dayWorkouts.map((workout) => {
-            const checked = getCheckedForWorkout(checkedExercises, workout.id);
-            const exerciseCount = workout.exercises.length;
-            const totalVolume = formatVolume(workout.exercises);
-            const allExercisesComplete =
-              exerciseCount > 0 && workout.exercises.every((e) => e.completedAt);
-            const sectionClass = [
-              'day-detail__workout-section',
-              allExercisesComplete ? 'day-detail__workout-section--completed' : '',
-            ]
-              .filter(Boolean)
-              .join(' ');
+          {sections.map(({ checked, exerciseCount, sectionClass, totalVolume, workout }) => {
+            const isDeleteMode = deleteModeWorkoutId === workout.id;
+            const exerciseIds = workout.exercises.map((ex) => ex.id);
+            const anyExpanded = exerciseIds.some((id) => expandedExerciseIds.has(id));
 
             return (
               <div className={sectionClass} key={workout.id}>
@@ -301,12 +308,15 @@ export const DayDetail = () => {
                     <button
                       className="day-detail__collapse-all-btn"
                       onClick={() => {
-                        const ids = workout.exercises.map((ex) => ex.id);
-                        setExpandedExerciseIds((prev) => removeIdsFromSet(prev, ids));
+                        setExpandedExerciseIds((prev) =>
+                          anyExpanded
+                            ? removeIdsFromSet(prev, exerciseIds)
+                            : addIdsToSet(prev, exerciseIds),
+                        );
                       }}
                       type="button"
                     >
-                      <ChevronUpIcon />
+                      {anyExpanded ? <ChevronUpIcon /> : <ChevronDownIcon />}
                     </button>
 
                     <button
@@ -319,18 +329,31 @@ export const DayDetail = () => {
                   </div>
                 </div>
 
-                {checked.size > 0 && (
+                {isDeleteMode && (
                   <div className="day-detail__toolbar">
-                    <span className="day-detail__selected-count">{checked.size} selected</span>
+                    <span className="day-detail__selected-count">
+                      {checked.size} selected
+                    </span>
 
-                    <button
-                      className="day-detail__bulk-btn"
-                      onClick={() => setShowBulkDeleteWorkoutId(workout.id)}
-                      type="button"
-                    >
-                      <TrashIcon />
-                      Delete
-                    </button>
+                    <div className="day-detail__toolbar-actions">
+                      <button
+                        className="day-detail__bulk-btn day-detail__bulk-btn--cancel"
+                        onClick={() => handleCancelDeleteMode(workout.id)}
+                        type="button"
+                      >
+                        Cancel
+                      </button>
+
+                      <button
+                        className="day-detail__bulk-btn"
+                        disabled={checked.size === 0}
+                        onClick={() => setShowBulkDeleteWorkoutId(workout.id)}
+                        type="button"
+                      >
+                        <TrashIcon />
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -338,6 +361,7 @@ export const DayDetail = () => {
                   {workout.exercises.map((exercise, index) => (
                     <ExerciseItem
                       checked={checked.has(exercise.id)}
+                      deleteMode={isDeleteMode}
                       editing={editingExerciseId === exercise.id}
                       exercise={exercise}
                       expanded={expandedExerciseIds.has(exercise.id)}
@@ -350,6 +374,12 @@ export const DayDetail = () => {
                       }
                       onClone={() => handleCloneExercise(workout.id, index)}
                       onDelete={() => handleDeleteExercise(workout.id, index)}
+                      onDeleteModeStart={() => {
+                        setDeleteModeWorkoutId(workout.id);
+                        setCheckedExercises((prev) =>
+                          updateCheckedExercises(prev, workout.id, exercise.id, true),
+                        );
+                      }}
                       onMoveDown={() => handleMoveExercise(workout.id, index, 'down')}
                       onMoveUp={() => handleMoveExercise(workout.id, index, 'up')}
                       onToggleEditing={() =>

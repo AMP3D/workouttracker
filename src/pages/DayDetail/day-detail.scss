@@ -64,6 +64,18 @@
       background-color: rgba($grapefruit-pink, 0.1);
     }
 
+    &:disabled {
+      opacity: 0.4;
+    }
+
+    &--cancel {
+      color: $text-muted;
+
+      &:active {
+        background-color: rgba($text-muted, 0.1);
+      }
+    }
+
     svg {
       height: 1rem;
       width: 1rem;
@@ -71,9 +83,11 @@
   }
 
   &__collapse-all-btn {
+    align-items: center;
     border: 1px solid $border-color;
     border-radius: $radius-sm;
     color: $text-muted;
+    display: flex;
     padding: $spacing-xs;
 
     &:active {
@@ -88,7 +102,9 @@
   }
 
   &__delete-workout-btn {
+    align-items: center;
     color: $text-muted;
+    display: flex;
     padding: $spacing-xs;
 
     &:active {
@@ -147,9 +163,18 @@
 
   &__toolbar {
     align-items: center;
+    background-color: rgba($grapefruit-pink, 0.05);
+    border-bottom: 1px solid $border-color;
+    border-top: 1px solid $border-color;
     display: flex;
     justify-content: space-between;
     padding: $spacing-sm $spacing-lg;
+  }
+
+  &__toolbar-actions {
+    align-items: center;
+    display: flex;
+    gap: $spacing-sm;
   }
 
   &__workout-actions {

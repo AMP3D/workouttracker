@@ -1,7 +1,6 @@
 import type { WorkoutTemplate } from '../models';
-import { STORE_TEMPLATES } from '../models';
 import { generateId } from '../utils/id-utils';
-import { getDb } from './db';
+import { db } from './db';
 
 const DEFAULT_TEMPLATES: Omit<WorkoutTemplate, 'id'>[] = [
   {
@@ -375,14 +374,10 @@ const DEFAULT_TEMPLATES: Omit<WorkoutTemplate, 'id'>[] = [
 ];
 
 export const loadDefaultData = async (): Promise<void> => {
-  const db = await getDb();
-  const tx = db.transaction(STORE_TEMPLATES, 'readwrite');
-  const store = tx.objectStore(STORE_TEMPLATES);
+  const templates = DEFAULT_TEMPLATES.map((raw) => ({
+    ...raw,
+    id: generateId(),
+  }));
 
-  for (const raw of DEFAULT_TEMPLATES) {
-    const template: WorkoutTemplate = { ...raw, id: generateId() };
-    await store.put(template);
-  }
-
-  await tx.done;
+  await db.templates.bulkPut(templates);
 };

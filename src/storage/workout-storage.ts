@@ -1,60 +1,47 @@
 import type { DayWorkout, WorkoutTemplate } from '../models';
-import { STORE_DAY_WORKOUTS, STORE_TEMPLATES } from '../models';
-import { getDb } from './db';
+import { db } from './db';
 
 export const addTemplate = async (template: WorkoutTemplate): Promise<void> => {
-  const db = await getDb();
-  await db.put(STORE_TEMPLATES, template);
+  await db.templates.put(template);
 };
 
 export const deleteTemplate = async (id: string): Promise<void> => {
-  const db = await getDb();
-  await db.delete(STORE_TEMPLATES, id);
+  await db.templates.delete(id);
 };
 
 export const deleteWorkout = async (id: string): Promise<void> => {
-  const db = await getDb();
-  await db.delete(STORE_DAY_WORKOUTS, id);
+  await db.dayWorkouts.delete(id);
 };
 
 export const getAllTemplates = async (): Promise<WorkoutTemplate[]> => {
-  const db = await getDb();
-  return db.getAll(STORE_TEMPLATES);
+  return db.templates.toArray();
 };
 
 export const getAllWorkouts = async (): Promise<DayWorkout[]> => {
-  const db = await getDb();
-  return db.getAll(STORE_DAY_WORKOUTS);
+  return db.dayWorkouts.toArray();
 };
 
 export const getWorkoutById = async (id: string): Promise<DayWorkout | undefined> => {
-  const db = await getDb();
-  return db.get(STORE_DAY_WORKOUTS, id);
+  return db.dayWorkouts.get(id);
 };
 
 export const getWorkoutsByDate = async (date: string): Promise<DayWorkout[]> => {
-  const db = await getDb();
-  return db.getAllFromIndex(STORE_DAY_WORKOUTS, 'date', date);
+  return db.dayWorkouts.where('date').equals(date).toArray();
 };
 
 export const getWorkoutsInRange = async (
   startDate: string,
   endDate: string,
 ): Promise<DayWorkout[]> => {
-  const db = await getDb();
-  const all = await db.getAll(STORE_DAY_WORKOUTS);
-
-  return all.filter((w) => w.date >= startDate && w.date <= endDate);
+  return db.dayWorkouts.where('date').between(startDate, endDate, true, true).toArray();
 };
 
 export const saveWorkout = async (workout: DayWorkout): Promise<void> => {
-  const db = await getDb();
-  await db.put(STORE_DAY_WORKOUTS, workout);
+  await db.dayWorkouts.put(workout);
 };
 
 export const syncWorkoutToTemplate = async (workout: DayWorkout): Promise<void> => {
-  const db = await getDb();
-  const allTemplates: WorkoutTemplate[] = await db.getAll(STORE_TEMPLATES);
+  const allTemplates = await db.templates.toArray();
   const match = allTemplates.find((t) => t.name === workout.workoutName);
 
   if (!match) {
@@ -74,5 +61,5 @@ export const syncWorkoutToTemplate = async (workout: DayWorkout): Promise<void> 
     })),
   };
 
-  await db.put(STORE_TEMPLATES, updatedTemplate);
+  await db.templates.put(updatedTemplate);
 };

@@ -98,6 +98,25 @@
     }
   }
 
+  &__delete-mode-btn {
+    align-items: center;
+    border: 1px solid $border-color;
+    border-radius: $radius-sm;
+    color: $text-muted;
+    display: flex;
+    padding: 0.1875rem;
+
+    &:active {
+      border-color: $grapefruit-pink;
+      color: $grapefruit-pink;
+    }
+
+    svg {
+      height: 0.75rem;
+      width: 0.75rem;
+    }
+  }
+
   &__delete-btn {
     align-items: center;
     color: $grapefruit-pink;

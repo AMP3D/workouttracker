@@ -1,5 +1,4 @@
-import type { DayWorkout } from './day-workout';
-import type { WorkoutTemplate } from './workout-template';
+import type { DayWorkout, WorkoutTemplate } from './workout';
 
 export interface ImportData {
   dayWorkouts: DayWorkout[];

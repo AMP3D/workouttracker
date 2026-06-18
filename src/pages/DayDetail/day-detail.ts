@@ -1,4 +1,24 @@
-import type { DayWorkout, Exercise, ExerciseSet, WorkoutTemplate } from '../../models';
+import type {
+  DayWorkout,
+  Exercise,
+  ExerciseSet,
+  WorkoutTemplate,
+} from '../../models';
+
+export interface UpdateExerciseResult {
+  collapseId: string | null;
+  expandId: string | null;
+  updatedWorkout: DayWorkout;
+}
+
+export interface WorkoutSectionData {
+  allComplete: boolean;
+  checked: Set<string>;
+  exerciseCount: number;
+  sectionClass: string;
+  totalVolume: number;
+  workout: DayWorkout;
+}
 import {
   getAllTemplates,
   getAllWorkouts,
@@ -7,7 +27,7 @@ import {
   syncWorkoutToTemplate,
 } from '../../storage/workout-storage';
 import { makeExerciseId, makeSetId, makeWorkoutId } from '../../utils/id-utils';
-import { calculateTotalWeight } from '../../utils/weight-utils';
+import { calculateTotalWeight, formatVolume } from '../../utils/weight-utils';
 import {
   formatDuration,
   formatTime,
@@ -59,6 +79,25 @@ export const buildNewWorkout = (
   startedAt: Date.now(),
   workoutName,
 });
+
+export const buildWorkoutSections = (
+  workouts: DayWorkout[],
+  checkedExercises: Map<string, Set<string>>,
+): WorkoutSectionData[] =>
+  workouts.map((workout) => {
+    const checked = getCheckedForWorkout(checkedExercises, workout.id);
+    const exerciseCount = workout.exercises.length;
+    const totalVolume = formatVolume(workout.exercises);
+    const allComplete = exerciseCount > 0 && workout.exercises.every((e) => e.completedAt);
+    const sectionClass = [
+      'day-detail__workout-section',
+      allComplete ? 'day-detail__workout-section--completed' : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+
+    return { allComplete, checked, exerciseCount, sectionClass, totalVolume, workout };
+  });
 
 export const cloneExercise = (source: Exercise, newOrder: number): Exercise => ({
   ...source,
@@ -198,6 +237,32 @@ export const persistAndSync = async (workout: DayWorkout, isToday: boolean): Pro
     await syncWorkoutToTemplate(workout);
   }
 };
+
+export const processExerciseUpdate = (
+  workout: DayWorkout,
+  exerciseIndex: number,
+  updated: Exercise,
+  allSetsJustCompleted?: boolean,
+): UpdateExerciseResult => {
+  const updatedWorkout = applyExerciseUpdate(workout, exerciseIndex, updated);
+
+  let collapseId: string | null = null;
+  let expandId: string | null = null;
+
+  if (allSetsJustCompleted) {
+    collapseId = updated.id;
+    const nextIdx = findNextIncompleteIndex(updatedWorkout.exercises, exerciseIndex);
+
+    if (nextIdx !== -1) {
+      expandId = updatedWorkout.exercises[nextIdx].id;
+    }
+  }
+
+  return { collapseId, expandId, updatedWorkout };
+};
+
+export const addIdsToSet = (prev: Set<string>, ids: string[]): Set<string> =>
+  new Set([...prev, ...ids]);
 
 export const removeExercise = (exercises: Exercise[], index: number): Exercise[] =>
   exercises.filter((_, i) => i !== index).map((e, i) => ({ ...e, order: i }));

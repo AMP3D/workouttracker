@@ -157,9 +157,18 @@
     }
   }
 
+  &__exercise-duration {
+    color: $text-muted;
+    font-size: $font-size-xs;
+    font-weight: 400;
+  }
+
   &__exercise-name {
+    align-items: baseline;
+    display: flex;
     font-size: $font-size-sm;
     font-weight: 600;
+    gap: $spacing-sm;
     margin-bottom: $spacing-xs;
   }
 
